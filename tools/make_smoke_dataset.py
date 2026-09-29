@@ -5,7 +5,8 @@
 链路（数据准备 -> 训练 -> 产出 best.pt）是通的。
 
 生成的内容（在 --out 目录下）：
-  detection/{train,valid}/{images,labels} + data.yaml
+  detection/{train,valid}/{images,labels}        （故意不写 data.yaml，
+                                                  顺便验证 train.py / evaluate.py 会自动补生成）
   classification/{train,test}/<类别名>/          （故意不给 val/，顺便验证回退逻辑）
   segmentation/raw/{benign,malignant,normal}     BUSI 风格：normal 目录没有掩码
   segmentation/data/{train,val,test}/{images,labels} + data.yaml

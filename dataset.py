@@ -6,7 +6,7 @@
   detection       detection/data/{train,valid,test}/{images,labels} + data.yaml
   classification  classification/Covid19-dataset/{train,val,test}/{Covid,Normal,Viral Pneumonia}
   segmentation    segmentation/Dataset_BUSI_with_GT/{benign,malignant,normal}/*.png
-                  --(masks_to_polygons + splitfolders)-->
+                  --(masks_to_polygons + split_train_test_val)-->
                   segmentation/data/{train,val,test}/{images,labels} + segmentation/data.yaml
 
 原仓库从来没有生成过 segmentation/data.yaml，segment.train() 却直接引用它——
@@ -185,7 +185,8 @@ def segment_split_dirs(root=None) -> dict:
 def segment_raw_counts(root=None) -> dict:
     """统计 BUSI 原始数据集（benign/malignant/normal）的图片与掩码数量。
 
-    normal 目录只有图片、没有 *_mask.png，这是 BUSI 数据集本身的特点。
+    normal 目录在 Kaggle 镜像里也带 *_mask.png，但实测 133 个掩码全为纯黑（无病灶），
+    转成标签后就是空文件；上游 README 把 normal 描述为「只有图片」，两种情形这里都能统计。
     """
     root = Path(root or config.SEGMENT_RAW_DIR)
     counts = {}
@@ -202,7 +203,7 @@ def build_segment_data_yaml(root=None, yaml_path=None, class_names=None,
                             overwrite=True) -> Path:
     """生成 data.yaml（原仓库缺失的文件）。
 
-    指向 splitfolders 产出的 <root>/{train,val,test}/{images,labels}。
+    指向 split_train_test_val 产出的 <root>/{train,val,test}/{images,labels}。
     默认位置是 config.SEGMENT_SPLIT_DIR 与 config.SEGMENT_DATA_YAML，
     也可以显式传 root/yaml_path（冒烟测试就是这么用的）。
     """

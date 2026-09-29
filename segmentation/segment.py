@@ -29,8 +29,9 @@ def train(**kwargs):
     数据集来自 prepare_input() 产出的 segmentation/data/ 与 segmentation/data.yaml，
     输出到 runs/segment/train/，也就是应用实际读取权重的目录。
 
-    注意 BUSI 的 normal/ 只有图片没有掩码，所以 normal 类没有正样本，
-    只作为背景图参与训练——这与仓库里既有权重的 nc=3 保持一致。
+    注意 normal 类在 Kaggle 镜像里虽有掩码，但内容全为纯黑，转成标签后是空文件，
+    所以 normal 类没有正样本，只作为背景图参与训练——这与仓库里既有权重的
+    nc=3 保持一致。（上游 README 描述为「normal 只有图片没有掩码」，结果也一样。）
 
     常用调用：
         python train.py segment --prepare   # 先准备数据

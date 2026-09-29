@@ -13,6 +13,9 @@
 #   2) numpy 2.x 已移除 np.fromstring 二进制模式, 本项目代码已改用 np.frombuffer。
 #   3) 新版 streamlit 已移除 use_column_width, 本项目代码已改用 width="stretch"。
 #   4) torch 默认安装 CPU 版; 需要 GPU 训练请参考文件末尾注释。
+#   5) 不再依赖 split-folders: 数据集划分改为「按病例名归组后划分」,
+#      见 segmentation/masks_to_polygons.split_train_test_val 的 docstring,
+#      因此 split-folders==0.6.1 已从本文件移除。
 # ============================================================
 
 # --- 直接依赖 ---
@@ -20,7 +23,6 @@ streamlit==1.64.0
 opencv-python==5.0.0.93
 Pillow==12.3.0
 ultralytics==8.4.135
-split-folders==0.6.1
 
 # --- 关键运行时依赖(锁定版本以保证可复现) ---
 numpy==2.4.6
