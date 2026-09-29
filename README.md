@@ -107,5 +107,57 @@ Start the Streamlit app to see our project in action:
 streamlit run app.py
 ```
 
+`requirements.txt` pins every version (validated on Python 3.11) and is stored as
+UTF-8 with a BOM, so `pip install -r requirements.txt` also works on Windows
+consoles that default to a legacy code page.
+
+### Windows launchers
+
+Two convenience launchers are included at the repository root. They `cd` into the
+script directory first, so they work regardless of the directory you start them
+from:
+
+```bat
+run_web.bat
+```
+
+```powershell
+.\run_web.ps1
+```
+
+Both prefer `D:\infynova\venv_main311\Scripts\python.exe` when it exists and fall
+back to `python` on your `PATH` otherwise.
+
+## Batch inference and result export
+
+Every task page now accepts **multiple images at once**:
+
+- Upload a single image (or upload nothing to run the bundled demo image) to see
+  the annotated result, key metrics and a per-target table.
+- Upload two or more images to run **batch inference**: a progress bar is shown
+  while the images are processed, each image gets its own collapsible section,
+  and a combined summary table is appended at the bottom.
+
+Results can be downloaded directly from the UI:
+
+| Scope | Files |
+| --- | --- |
+| Per image | annotated PNG, CSV (one row per target), JSON |
+| Per image, segmentation only | the binary mask PNG as well |
+| Batch, in addition | combined CSV, combined JSON, and a ZIP bundle |
+
+The ZIP bundle contains `README.txt`, `results.csv`, `results.json`, `images/`
+and `masks/` (segmentation only). CSV exports are UTF-8 **with BOM** so Excel
+opens them without mojibake.
+
+Internally, `predict()` in `detection/detect.py`, `classification/classify.py`
+and `segmentation/segment.py` returns a plain results dictionary instead of
+drawing into Streamlit, keeping inference and presentation separate.
+`config.py` centralises all paths (resolved from `__file__`, so the app no longer
+has to be launched from the repository root) and caches each YOLO model so the
+weights are loaded only once per process. `export.py` turns those dictionaries
+into CSV / JSON / PNG / ZIP.
+
+
 
 

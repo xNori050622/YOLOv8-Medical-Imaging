@@ -1,7 +1,8 @@
+import numpy as np
 from ultralytics import YOLO
-import os
-import cv2 as cv
-from PIL import Image
+
+import config
+
 
 def train():
     model = YOLO('yolov8n.yaml')  # build a new model from scratch
@@ -9,39 +10,55 @@ def train():
 
     # or you can run following in command line:
     # yolo detect train data=data.yaml model="yolov8n.yaml" epochs=1
-    
 
-def predict(img, confidence, st):
-    # detection model
-    model_path = os.path.join('.', 'runs', 'detect', 'train', 'weights', 'best.pt')
-    model = YOLO(model_path)
-     
-     # Predict
-    results = model.predict(img, conf=confidence)
+
+def predict(img, confidence=config.DEFAULT_CONFIDENCE, filename=""):
+    """目标检测。
+
+    参数
+      img        : BGR 图像数组（OpenCV 读入）
+      confidence : 置信度阈值
+      filename   : 来源文件名，写进结果里方便导出时对应
+
+    返回结构化 dict：
+      task       任务类型
+      detections [{class_id, class_name, confidence, box:[x1,y1,x2,y2]}, ...]
+      counts     {类别名: 数量}
+      plot_rgb   带检测框的 RGB 图像数组
+    """
+    model = config.load_model(config.DETECT_WEIGHTS)
+
+    results = model.predict(img, conf=confidence, verbose=False)
     result = results[0]
-    
-    print("\n[INFO] Numer of objects detected : ", len(result.boxes) )
-    
-    
-    for r in results:
-        im_array = r.plot()  # plot a BGR numpy array of predictions
-        im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
-        # im.show()  # show image
-        # im.save('results.jpg')  # save image
-        
-    
-    # OR
-        
-    # for obj in result.boxes.data.tolist():
-    #     x1, y1, x2, y2, score, class_id = obj
-        
-    #     cv .rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,0), 4)
-    #     cv.putText(img, result.names[int(class_id)].upper(),  (int(x1), int(y1 - 10)),
-    #                 cv.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv.LINE_AA)
-        
-            
-    st.subheader('Output Image')
-    st.image(im, channels="BGR", width="stretch")
+    names = result.names
 
-        
-    
+    detections = []
+    if result.boxes is not None:
+        for box in result.boxes:
+            x1, y1, x2, y2 = (float(v) for v in box.xyxy[0].tolist())
+            class_id = int(box.cls[0])
+            detections.append({
+                "class_id": class_id,
+                "class_name": names.get(class_id, str(class_id)),
+                "confidence": round(float(box.conf[0]), 4),
+                "box": [x1, y1, x2, y2],
+            })
+
+    counts = {}
+    for det in detections:
+        counts[det["class_name"]] = counts.get(det["class_name"], 0) + 1
+
+    print(f"\n[INFO] Number of objects detected: {len(detections)}")
+
+    # result.plot() 返回 BGR 数组，转成 RGB 以便显示与导出 PNG
+    plot_rgb = np.ascontiguousarray(result.plot()[..., ::-1])
+
+    return {
+        "task": "detect",
+        "filename": filename,
+        "num_objects": len(detections),
+        "detections": detections,
+        "counts": counts,
+        "class_names": dict(names),
+        "plot_rgb": plot_rgb,
+    }
