@@ -24,6 +24,10 @@ Thumbs.db
 *.log
 *.bak
 
+# ---- ultralytics 数据集缓存：内容记录的是绝对路径，随数据位置变化即失效，
+# ---- 用时会自动重建，不属于数据本身 ----
+*.cache
+
 # ---- 训练：基础（COCO 预训练）权重，体积大且可重新下载 ----
 weights/*.pt
 weights/*.pt.bak
@@ -34,8 +38,18 @@ classification/Covid19-dataset/
 segmentation/Dataset_BUSI_with_GT/
 segmentation/data/
 segmentation/data_/
+# tools/make_augmented_dataset.py 的默认输出位置（原图+增强，体积翻倍）
+segmentation/data_aug/
 segmentation/data.yaml
 
 # ---- 训练产物：仓库里只保留原有的 runs/<task>/train/，其余重训输出不入库 ----
 runs/*/smoke/
 runs/*/train[0-9]*/
+
+# ---- 评估产物：ultralytics val()（runs/<task>/val*/）与 evaluate.py --cross-check
+# ---- 的输出（runs/cross_check_*/）都是可重新生成的，不入库 ----
+runs/*/val*/
+runs/cross_check_*/
+# ---- evaluate.py --save 输出的指标 JSON 同样可重新生成，不入库。
+# ---- 用 ** 覆盖子目录，例如 runs/ablation/baseline_val.json ----
+runs/**/*.json
