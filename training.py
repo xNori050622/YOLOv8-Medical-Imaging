@@ -84,6 +84,15 @@ def resolve_data(task: str, data=None) -> str:
 
     yaml_path = Path(data or profile["data"])
     if not yaml_path.is_file():
+        if data:
+            # 显式传了 --data 却找不到文件：绝不能静默回退到默认数据集。
+            # 否则「增强臂」实际拿未增强的数据训练，而实验记录上写着增强 ——
+            # 消融表整张都是错的，且全过程不会报任何错。
+            raise FileNotFoundError(
+                f"指定的分割数据集配置不存在：{yaml_path}\n"
+                "  · 增强数据集请先用 tools/make_augmented_dataset.py 生成；\n"
+                "  · 想用默认数据集就不要传 --data。"
+            )
         yaml_path = dataset.build_segment_data_yaml()
     if not yaml_path.is_file():
         raise FileNotFoundError(
