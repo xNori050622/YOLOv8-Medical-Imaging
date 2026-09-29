@@ -72,7 +72,7 @@ def main():
         DEMO_IMAGE = "DEMO_IMAGES/BloodImage_00000_jpg.rf.5fb00ac1228969a39cee7cd6678ee704.jpg"
         
         if img_file_buffer_detect is not None:
-            img = cv.imdecode(np.fromstring(img_file_buffer_detect.read(), np.uint8), 1)
+            img = cv.imdecode(np.frombuffer(img_file_buffer_detect.getvalue(), np.uint8), 1)
             image = np.array(Image.open(img_file_buffer_detect))
         else:
             img = cv.imread(DEMO_IMAGE)
@@ -93,7 +93,7 @@ def main():
         DEMO_IMAGE = "DEMO_IMAGES/094.png"
         
         if img_file_buffer_classify is not None:
-            img = cv.imdecode(np.fromstring(img_file_buffer_classify.read(), np.uint8), 1)
+            img = cv.imdecode(np.frombuffer(img_file_buffer_classify.getvalue(), np.uint8), 1)
             image = np.array(Image.open(img_file_buffer_classify))
         else:
             img = cv.imread(DEMO_IMAGE)
@@ -115,7 +115,7 @@ def main():
         DEMO_IMAGE = "DEMO_IMAGES/benign (2).png"
         
         if img_file_buffer_segment is not None:
-            img = cv.imdecode(np.fromstring(img_file_buffer_segment.read(), np.uint8), 1)
+            img = cv.imdecode(np.frombuffer(img_file_buffer_segment.getvalue(), np.uint8), 1)
             image = np.array(Image.open(img_file_buffer_segment))
         else:
             img = cv.imread(DEMO_IMAGE)

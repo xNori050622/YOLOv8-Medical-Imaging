@@ -52,6 +52,6 @@ def predict(img, st):
             
     st.subheader('Output Image')
     cols = st.columns(2)
-    cols[0].image(mask_out, clamp=True, channels='GRAY', use_column_width=True)
-    cols[1].image(im,channels='RBG', use_column_width=True)
+    cols[0].image(mask_out, clamp=True, channels='GRAY', width="stretch")
+    cols[1].image(im, channels='RGB', width="stretch")
     

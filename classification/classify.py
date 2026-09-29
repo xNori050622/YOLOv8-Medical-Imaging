@@ -24,5 +24,5 @@ def predict(img, st):
     
     
     st.subheader('Output Image')
-    st.image(img, channels="BGR", use_column_width=True)
+    st.image(img, channels="BGR", width="stretch")
 
