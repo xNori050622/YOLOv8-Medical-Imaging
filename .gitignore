@@ -22,3 +22,20 @@ env/
 Thumbs.db
 .DS_Store
 *.log
+*.bak
+
+# ---- 训练：基础（COCO 预训练）权重，体积大且可重新下载 ----
+weights/*.pt
+weights/*.pt.bak
+
+# ---- 训练：数据集，体积大且需自行下载（见 README）----
+detection/data/
+classification/Covid19-dataset/
+segmentation/Dataset_BUSI_with_GT/
+segmentation/data/
+segmentation/data_/
+segmentation/data.yaml
+
+# ---- 训练产物：仓库里只保留原有的 runs/<task>/train/，其余重训输出不入库 ----
+runs/*/smoke/
+runs/*/train[0-9]*/

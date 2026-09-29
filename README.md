@@ -159,5 +159,108 @@ weights are loaded only once per process. `export.py` turns those dictionaries
 into CSV / JSON / PNG / ZIP.
 
 
+## Training
+
+`runs/*/train/weights/best.pt` were trained by the original author on Google
+Colab. `train.py` reproduces that setup locally, and `train.py check` reports
+what is currently present before you start.
+
+### 1. Datasets
+
+None of the three datasets is bundled — they are large and licensed separately.
+Download them and unpack them **without renaming anything**, because `config.py`
+expects the original layout:
+
+| Task | Dataset | Expected location |
+| --- | --- | --- |
+| Detection | [RBC / WBC Blood Cells](https://universe.roboflow.com/tfg-2nmge/yolo-yejbs), Roboflow export in *YOLOv8* format | `detection/data/{train,valid,test}/{images,labels}` + `data.yaml` |
+| Classification | [COVID-19 Image Dataset](https://www.kaggle.com/datasets/pranavraikokte/covid19-image-dataset) | `classification/Covid19-dataset/{train,test}/{Covid,Normal,Viral Pneumonia}` |
+| Segmentation | [Breast Ultrasound Images (BUSI)](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset) | `segmentation/Dataset_BUSI_with_GT/{benign,malignant,normal}` |
+
+Kaggle needs an API token (`kaggle.json`), Roboflow needs an account. The class
+order is baked into the shipped checkpoints, so it must not change:
+
+```text
+detection       Platelets, RBC, WBC
+classification  Covid, Normal, Viral Pneumonia     # sorted folder names
+segmentation    benign, malignant, normal
+```
+
+Two helpful details:
+
+- If `detection/data/` only has `images/` and `labels/`, `data.yaml` is generated
+  automatically on the first run.
+- Segmentation needs one extra step (`--prepare`), which turns the BUSI masks into
+  polygon labels, splits them 8:1:1 and finally writes `segmentation/data.yaml` —
+  a file the original repository never created, which is why `train()` could
+  never run. BUSI has no masks for `normal`, so that class contributes background
+  images only; `nc=3` is kept so the class list still matches the checkpoint.
+
+### 2. Base weights
+
+Training starts from the COCO / ImageNet checkpoints in `weights/`
+(`yolov8n.pt`, `yolov8n-cls.pt`, `yolov8n-seg.pt`, ~19 MB in total). They are not
+committed, so a fresh clone has none of them:
+
+```bash
+python tools/get_weights.py          # downloads whatever is missing
+python tools/get_weights.py --force  # re-downloads all three
+```
+
+The script resumes interrupted transfers and validates each file, because the
+official asset host is reachable but slow — and sometimes stalls — from some
+networks. Ultralytics would also download these on demand, but without resume
+support. Alternatively, `--no-pretrained` trains from scratch using the model
+`*.yaml` bundled with ultralytics and needs no network at all.
+
+### 3. Run
+
+```bash
+python train.py detect                      # 100 epochs, imgsz 640
+python train.py classify                    # 100 epochs, imgsz 224
+python train.py segment --prepare           # build the BUSI dataset first
+python train.py segment
+python train.py all                         # all three in order
+python train.py detect --epochs 1 --device cpu   # quick smoke run
+```
+
+Output lands in `runs/<task>/train/` — exactly where the Streamlit app reads it.
+The existing `best.pt` is copied to `best.pt.bak` first, so a retrain never
+silently destroys the shipped weights. Use `--name smoke` to write somewhere else
+instead. Defaults mirror `runs/*/train/args.yaml`: 100 epochs, batch 16, seed 0,
+`deterministic=True`, imgsz 640 for detect/segment and 224 for classify.
+
+The implementation is split so the same code serves the CLI and any script:
+`training.py` holds the shared train loop, `dataset.py` the dataset layout,
+validation and `data.yaml` generation, and each task module's `train()` is a thin
+wrapper over `training.train_task()`.
+
+### 4. Verify the pipeline without downloading a dataset
+
+`tools/make_smoke_dataset.py` builds a tiny synthetic dataset (a few dozen
+64–96 px images) in a temporary directory, so the whole chain — data preparation,
+training, checkpoint output — can be checked in about a minute:
+
+```powershell
+python tools\make_smoke_dataset.py --out D:\temp\p3_smoke
+```
+
+It prints the three commands to run; each uses `--name smoke`, so the shipped
+weights stay untouched.
+
+### GPU training
+
+`requirements.txt` installs CPU-only torch. For an NVIDIA GPU:
+
+```powershell
+D:\infynova\venv_gpu\Scripts\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+```
+
+`--device auto` (the default) picks CUDA when it is available and falls back to
+CPU otherwise. On a GPU, ultralytics runs a one-off AMP self-check that tries to
+download `yolo26n.pt`; `--no-amp` skips it.
+
+
+
 
 

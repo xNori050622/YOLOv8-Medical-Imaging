@@ -1,12 +1,22 @@
 import cv2 as cv
-from ultralytics import YOLO
 
 import config
+import training
 
 
-def train():
-    model = YOLO("yolov8n-cls.yaml")
-    model.train(data="D:\\computer-vision\\projects\\streamlit-dashboard\\classification\\Covid19-dataset", epochs=100)
+def train(**kwargs):
+    """训练分类模型。
+
+    数据集目录结构（类别名必须是排序后与既有权重一致的 Covid/Normal/Viral Pneumonia）：
+        classification/Covid19-dataset/train/<类别>/*.jpg
+        classification/Covid19-dataset/test/<类别>/*.jpg
+
+    ultralytics 在缺 val/ 时会自动回退用 test/ 做验证（见 check_cls_dataset）。
+
+    常用调用：
+        python train.py classify                   # 100 epoch, imgsz=224
+    """
+    return training.train_task("classify", **kwargs)
 
 
 def predict(img, filename=""):

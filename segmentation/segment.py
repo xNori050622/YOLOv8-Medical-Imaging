@@ -1,21 +1,42 @@
 from segmentation.masks_to_polygons import *
-from ultralytics import YOLO
 import numpy as np
 import cv2 as cv
 from PIL import Image, ImageDraw
 
 import config
+import training
 
 
 def prepare_input():
+    """把 BUSI 原始数据集准备成 YOLO 分割数据集，返回 data.yaml 路径。
+
+    步骤：Dataset_BUSI_with_GT 的掩码转多边形标签 -> 按 8:1:1 划分 train/val/test
+    -> 生成 segmentation/data.yaml（原仓库缺了这一步，导致 train() 必然报错）。
+    """
     masks_to_polygons()
     split_train_test_val()
 
+    import dataset
 
-def train():
+    yaml_path = dataset.build_segment_data_yaml()
+    print(f"[prepare] 已生成分割数据集配置：{yaml_path}")
+    return yaml_path
 
-    model = YOLO("yolov8n-seg.yaml")
-    model.train(data="D:\\computer-vision\\projects\\streamlit-dashboard\\segmentation\\data.yaml", epochs=100)
+
+def train(**kwargs):
+    """训练分割模型。
+
+    数据集来自 prepare_input() 产出的 segmentation/data/ 与 segmentation/data.yaml，
+    输出到 runs/segment/train/，也就是应用实际读取权重的目录。
+
+    注意 BUSI 的 normal/ 只有图片没有掩码，所以 normal 类没有正样本，
+    只作为背景图参与训练——这与仓库里既有权重的 nc=3 保持一致。
+
+    常用调用：
+        python train.py segment --prepare   # 先准备数据
+        python train.py segment             # 再训练
+    """
+    return training.train_task("segment", **kwargs)
 
 
 def predict(img, confidence=config.DEFAULT_CONFIDENCE, filename=""):
