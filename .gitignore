@@ -18,6 +18,14 @@ env/
 # ---- Streamlit ----
 .streamlit/secrets.toml
 
+# ---- 凭据：一律不入库 ----
+# Roboflow / Kaggle 的 token 都只该活在本地。以前把 key 贴在对话里的那次事故
+# 说明这类东西一旦入库就永远留在历史里 (即使后来删除文件也没用)。
+.env
+.env.*
+kaggle.json
+
+
 # ---- 操作系统 / 临时文件 ----
 Thumbs.db
 .DS_Store
@@ -46,6 +54,11 @@ segmentation/data.yaml
 runs/*/smoke/
 runs/*/train[0-9]*/
 
+# ---- 导出模型（ONNX 等）：体积大且可由 best.pt 一条命令重新导出，
+# ---- 所以不入库；权重本身（runs/<task>/train/weights/*.pt）仍然入库。
+# ---- 重新导出的命令见 README「Export to ONNX」。
+runs/*/train/weights/*.onnx
+
 # ---- 评估产物：ultralytics val()（runs/<task>/val*/）与 evaluate.py --cross-check
 # ---- 的输出（runs/cross_check_*/）都是可重新生成的，不入库 ----
 runs/*/val*/
@@ -53,3 +66,8 @@ runs/cross_check_*/
 # ---- evaluate.py --save 输出的指标 JSON 同样可重新生成，不入库。
 # ---- 用 ** 覆盖子目录，例如 runs/ablation/baseline_val.json ----
 runs/**/*.json
+
+# ---- 例外：runs/eval_*.json 是报告里 mAP 的证据链（基线 vs 续训 vs 交叉验证），
+# ---- 体积小、需要人工核对，因此放行入库。必须写在上面的规则**之后**，
+# ---- 否则会被 runs/**/*.json 重新吃掉。
+!runs/eval_*.json
