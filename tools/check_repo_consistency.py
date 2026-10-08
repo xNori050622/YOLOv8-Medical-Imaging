@@ -2,8 +2,8 @@
 
 为什么需要
 ----------
-README 的「What this fork adds」写着「新增 27 个文件 / 修改 7 个 / +7721 −328 行」，
-「Regression tests」的表格写着每个测试文件有多少条用例、合计 104 条；workflow 里
+README 的「What this fork adds」写着新增多少文件、修改多少、增删多少行，
+「Regression tests」的表格写着每个测试文件有多少条用例、合计多少条；workflow 里
 又抄了一份依赖版本号。这些全是手写的，改一行代码就会失真，而失真时**没有任何东西
 会报错**：读者只能自己去 `git diff` 数一遍。
 
@@ -30,8 +30,9 @@ fork 的历史里一定是个祖先提交，任何完整克隆都能解析，也
 
 用法::
 
-    python tools/check_repo_consistency.py              # 本地：没有 origin/master 就跳过统计检查
-    python tools/check_repo_consistency.py --strict     # CI：origin/master 必须存在，否则算失败
+    python tools/check_repo_consistency.py                # 本地：历史不全时只跳过统计比对，其余两项照报
+    python tools/check_repo_consistency.py --strict        # CI：基线必须能解析，否则算失败（防「跳过」被当成通过）
+    python tools/check_repo_consistency.py --base HEAD~1   # 换一个对比基线
 """
 from __future__ import annotations
 
@@ -52,7 +53,8 @@ UPSTREAM_TIP = "5d13edfdc0b08db1cc4f8b017308b240b1424b69"
 DEFAULT_BASE = UPSTREAM_TIP
 EXCLUDE_RUNS = ":(exclude)runs"
 
-# "adds 28 files and modifies 7 (35 files, +8004 / −333 lines)"
+# 形如 "adds <N> files and modifies <M> (<F> files, +<X> / −<Y> lines)"；
+# 这里故意不写具体数字 —— 连注释里的数字都会过期，正是本脚本要治的病。
 # 注意 README 里的减号是 U+2212（数学减号），不是 ASCII 连字符，两种都收。
 # 单词之间用 \s+ 而不是空格：markdown 里这句话可能被换行折成两行，不该因此判定「找不到」。
 STAT_RE = re.compile(
@@ -162,15 +164,17 @@ def check_readme_stats(base: str, strict: bool) -> tuple[list[str], str]:
         return [f"读不到 git diff {base} 的结果"], f"对比基线 {label}"
 
     problems = []
-    for key, label in (
+    # 循环变量别叫 label：外层那个 label 是基线描述，被遮蔽后连 PASS 都会打印
+    # 「对比基线 删除行数」这种废话（这个 bug 当初就是被乱码遮住才没看出来的）。
+    for field, caption in (
         ("added", "新增文件数"),
         ("modified", "修改文件数"),
         ("files", "文件总数"),
         ("insertions", "新增行数"),
         ("deletions", "删除行数"),
     ):
-        if claimed[key] != actual[key]:
-            problems.append(f"{label}：README 写 {claimed[key]}，实际 {actual[key]}")
+        if claimed[field] != actual[field]:
+            problems.append(f"{caption}：README 写 {claimed[field]}，实际 {actual[field]}")
     if problems:
         problems.append(
             "请把 README「What this fork adds」里的数字改成："
