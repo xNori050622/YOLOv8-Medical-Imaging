@@ -1,0 +1,54 @@
+{
+  "task": "segment",
+  "num_images": 78,
+  "skipped_images": 0,
+  "per_class": {
+    "0": {
+      "name": "benign",
+      "images_with_record": 50,
+      "dice": 0.5511131129222752,
+      "dice_nonempty": 0.6888913911528439,
+      "iou": 0.49485173795747867,
+      "hd95": 47.695615635198706,
+      "instances_tp": 32,
+      "instances_fp": 21,
+      "instances_fn": 8,
+      "instance_precision": 0.6037735849056604,
+      "instance_recall": 0.8,
+      "instance_f1": 0.6881720430107526,
+      "mean_matched_dice": 0.9026155235620319
+    },
+    "1": {
+      "name": "malignant",
+      "images_with_record": 29,
+      "dice": 0.5069470215338658,
+      "dice_nonempty": 0.5654409086339273,
+      "iou": 0.43420344154408724,
+      "hd95": 56.62357595231798,
+      "instances_tp": 17,
+      "instances_fp": 5,
+      "instances_fn": 9,
+      "instance_precision": 0.7727272727272727,
+      "instance_recall": 0.6538461538461539,
+      "instance_f1": 0.7083333333333333,
+      "mean_matched_dice": 0.8357179272086551
+    }
+  },
+  "macro": {
+    "dice": 0.5290300672280706,
+    "dice_nonempty": 0.6271661498933856,
+    "iou": 0.46452758975078295,
+    "hd95": 52.15959579375834,
+    "instance_f1": 0.698252688172043
+  },
+  "weights": "D:\\YOLOv8-Medical-Imaging\\runs\\segment\\train\\weights\\best.pt",
+  "split": "val",
+  "conf": 0.25,
+  "imgsz": 640,
+  "ultralytics_val": {
+    "box_mAP50": 0.8236632498923302,
+    "box_mAP50_95": 0.5166566208436592,
+    "seg_mAP50": 0.8146603278569851,
+    "seg_mAP50_95": 0.5078942416672364
+  }
+}

@@ -349,6 +349,35 @@ to the standard segmentation and detection numbers, `evaluate.py` also reports t
 mean with empty ground truths excluded, and `--cross-check` runs ultralytics' own
 `val()` as a cross-check against the mAP computed here.
 
+### Where the numbers live
+
+Every figure quoted in this repository is checked in as JSON under `runs/eval_*.json`
+(`.gitignore` re-admits exactly that pattern), so each claim can be traced to the run
+that produced it:
+
+| File | Task | Split | Result |
+| --- | --- | --- | --- |
+| `runs/eval_detect_baseline.json` | detect | valid, 175 images | mAP@0.5 **0.8974**, macro P/R/F1 0.7719 / 0.9511 / 0.8465 |
+| `runs/eval_detect_retrained.json` | detect | valid, 175 images | mAP@0.5 **0.9290**, macro P/R/F1 0.8199 / 0.9679 / 0.8848 |
+| `runs/eval_detect_retrained_cross.json` | detect | valid, 175 images | the same run, plus ultralytics `val()` box mAP@0.5 = 0.9582 |
+| `runs/eval_classify_val.json` | classify | val, 50 images | accuracy **0.9200**, macro-F1 0.9199 |
+| `runs/eval_classify_test.json` | classify | test, 66 images | accuracy **0.9848**, macro-F1 0.9833 |
+| `runs/eval_segment_val.json` | segment | val, 78 images | Dice **0.5290** (0.6272 with empty ground truths dropped), IoU 0.4645, instance F1 0.6983 |
+
+The two detection rows are directly comparable — same script, same split, same
+`--conf 0.25` — so re-training is worth **+0.0316 mAP@0.5** (0.8974 → 0.9290). Do not
+subtract ultralytics' number from `evaluate.py`'s: for the *same* re-trained checkpoint
+the former reads 0.9582 and the latter 0.9290, because `val()` sweeps `--conf` down to
+0.001 and integrates the PR curve differently.
+
+Classification and segmentation were **not** re-trained here. Those two rows score the
+upstream Colab checkpoints as they stand, and both are still contaminated by defect 2
+in [What this fork adds](#what-this-fork-adds): upstream validated on `test/` while
+training (which is why 0.9848 there beats 0.9200 on `val/` — the test set is the one
+that was selected on), and `val/` was carved out of `train/` afterwards (so those 50
+images were trained on). Neither figure is a clean generalisation estimate; getting
+one needs the re-train, not another `evaluate.py` run.
+
 
 ## Data augmentation
 
@@ -450,7 +479,7 @@ pytest tests/                   # if you happen to have pytest installed
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `origin/master` and ignoring `runs/`, this fork
-adds 26 files and modifies 7 (33 files, +7523 / −328 lines).
+adds 26 files and modifies 7 (33 files, +7552 / −328 lines).
 
 | Area | Files |
 | --- | --- |

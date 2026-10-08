@@ -1,0 +1,78 @@
+{
+  "per_class": {
+    "0": {
+      "name": "Covid",
+      "tp": 26,
+      "fp": 0,
+      "fn": 0,
+      "support": 26,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "1": {
+      "name": "Normal",
+      "tp": 20,
+      "fp": 1,
+      "fn": 0,
+      "support": 20,
+      "precision": 0.9523809523809523,
+      "recall": 1.0,
+      "f1": 0.975609756097561
+    },
+    "2": {
+      "name": "Viral Pneumonia",
+      "tp": 19,
+      "fp": 0,
+      "fn": 1,
+      "support": 20,
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9743589743589743
+    }
+  },
+  "confusion_matrix": [
+    [
+      26,
+      0,
+      0
+    ],
+    [
+      0,
+      20,
+      0
+    ],
+    [
+      0,
+      1,
+      19
+    ]
+  ],
+  "num_samples": 66,
+  "accuracy": 0.9848484848484849,
+  "macro_precision": 0.9841269841269842,
+  "macro_recall": 0.9833333333333334,
+  "macro_f1": 0.9833229101521784,
+  "task": "classify",
+  "num_images": 66,
+  "skipped_images": 0,
+  "per_folder": {
+    "Covid": {
+      "images": 26,
+      "correct": 26
+    },
+    "Normal": {
+      "images": 20,
+      "correct": 20
+    },
+    "Viral Pneumonia": {
+      "images": 20,
+      "correct": 19
+    }
+  },
+  "unknown_folders": [],
+  "weights": "D:\\YOLOv8-Medical-Imaging\\runs\\classify\\train\\weights\\best.pt",
+  "split": "test",
+  "conf": 0.25,
+  "imgsz": 224
+}
