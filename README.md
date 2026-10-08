@@ -486,7 +486,7 @@ way to notice when one of the tests quietly stops meeting that bar.
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `origin/master` and ignoring `runs/`, this fork
-adds 27 files and modifies 7 (34 files, +7697 / −328 lines).
+adds 27 files and modifies 7 (34 files, +7721 / −328 lines).
 
 | Area | Files |
 | --- | --- |
