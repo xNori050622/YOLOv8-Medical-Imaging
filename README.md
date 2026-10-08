@@ -473,13 +473,20 @@ python tests/test_augment.py    # plain python
 pytest tests/                   # if you happen to have pytest installed
 ```
 
+`.github/workflows/tests.yml` runs exactly those six files on Windows with Python
+3.11 for every push, installing only the three packages the suite actually touches
+(`numpy`, `opencv-python`, `PyYAML`, pinned to the versions in `requirements.txt`).
+That job is what keeps the sentence above honest: the suite has to pass on a machine
+with neither the datasets nor torch, and running it on a clean checkout is the only
+way to notice when one of the tests quietly stops meeting that bar.
+
 
 ## What this fork adds
 
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `origin/master` and ignoring `runs/`, this fork
-adds 27 files and modifies 7 (34 files, +7661 / −328 lines).
+adds 27 files and modifies 7 (34 files, +7697 / −328 lines).
 
 | Area | Files |
 | --- | --- |
