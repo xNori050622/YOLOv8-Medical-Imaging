@@ -262,6 +262,147 @@ python tools\make_smoke_dataset.py --out D:\temp\p3_smoke
 It prints the three commands to run; each uses `--name smoke`, so the shipped
 weights stay untouched.
 
+### 5. Re-training classification and segmentation
+
+Detection was re-trained in this fork (commit `6df26fb`); classification and
+segmentation were not, and that is the last measurement gap left here. Both of their
+rows score the upstream Colab checkpoints, and both are contaminated by defect 2:
+`best.pt` was selected on `test/`, and `val/` was carved out of `train/` afterwards. The
+contamination sits in the weights, not in the split — re-scoring the upstream checkpoint
+on a corrected split cannot undo a model that was chosen on its own test set. Only a
+re-train produces a clean pair of numbers.
+
+The steps below are the whole job. Each command either works or says what is missing,
+and only step 2 needs a network. Run them from an environment that has `ultralytics`
+installed — in this fork `D:\infynova\venv_gpu\Scripts\python.exe` (torch 2.13.0+cu126,
+where `--device auto` finds the GPU; the CPU environment from `requirements.txt` runs
+the same commands, slowly).
+
+**1. Preflight.**
+
+```powershell
+python train.py check
+```
+
+Prints the base weights and the dataset layout for all three tasks. For classification
+it also compares the folder order with the order baked into the shipped checkpoints; if
+it warns `类别顺序与既有权重不一致`, fix the dataset instead of training — the class order
+belongs to the checkpoint, not to the run.
+
+**2. Base weights.**
+
+```powershell
+python tools\get_weights.py
+```
+
+Fills `weights/` — `yolov8n-cls.pt` and `yolov8n-seg.pt` are the two that matter here.
+The directory is gitignored and about 19 MB in total.
+
+**3. Build the segmentation dataset.**
+
+```powershell
+python train.py segment --prepare
+```
+
+Turns the BUSI masks into polygon labels, splits 8:1:1 by case name so that an image
+never separates from its own mask, and writes `segmentation/data.yaml` — the file
+upstream never had. The raw dataset and the YAML are both gitignored.
+
+**4. Carve a real `val/` out for classification.**
+
+```powershell
+python tools\make_classify_val.py --dry-run   # lists the files that would move
+python tools\make_classify_val.py             # 20%, stratified, seed 0
+```
+
+It **moves** 20% of every class out of `train/`, so train / val / test are disjoint
+(201 / 50 / 66 with the Kaggle dataset as shipped), records every move in
+`classification/Covid19-dataset/val_split_manifest.json`, and deletes the stale
+`train.cache` / `val.cache` / `test.cache`. `--undo` reverses it exactly, from that
+manifest; re-running without `--undo` refuses while `val/` exists unless `--force` is
+given. From here on `val/` is the selection-time figure, and `test/` — 66 images, never
+trained on and never selected on — is the one to quote.
+
+**5. Train.**
+
+```powershell
+python train.py classify      # 100 epochs, imgsz 224
+python train.py segment       # 100 epochs, imgsz 640
+```
+
+Defaults mirror `runs/*/train/args.yaml`: 100 epochs, batch 16, seed 0,
+`deterministic=True`. Output lands in `runs/<task>/train/` — the directory the app and
+`evaluate.py` read — and the existing `best.pt` is copied to `best.pt.bak` first, so a
+re-train never destroys the shipped weights silently. An interrupted run continues with
+`--resume`, which then takes epochs, data and batch from the checkpoint itself. For a
+sense of scale, detection runs at about 21 s/epoch on the machine this fork was
+developed on (1723 images at 640 px, per `tools\train_detect_gpu.bat`, ~35 minutes for
+100 epochs); these two are smaller — 201 training images at 224 px for classification,
+roughly 600 at 640 px for segmentation — so both should come in under that.
+`tools\train_status.ps1` is wired to `runs\detect\train` and will not track them; watch
+the console or `runs\<task>\train\results.csv`.
+
+**6. Decide what happens to the upstream checkpoints.**
+`runs/classify/train/weights/best.pt` and `runs/segment/train/weights/best.pt` are still
+upstream's files, tracked and unmodified, and training into the default name overwrites
+them. Two honest options, and the choice is visible to anyone who clones this:
+
+```powershell
+copy runs\classify\train\weights\best.pt runs\classify\_archive\best_original_colab_<date>.pt
+copy runs\segment\train\weights\best.pt  runs\segment\_archive\best_original_colab_<date>.pt
+```
+
+- **Archive first, then overwrite** — the detection precedent (`6df26fb`). The copies
+  above keep upstream's work in the repository byte-for-byte, the app and `evaluate.py`
+  default to the new weights, and the cost is two files (~3.0 MB and ~6.8 MB). It also
+  makes the sentence in [Credits and licensing](#credits-and-licensing) about which
+  checkpoint belongs to whom false, so that paragraph has to be rewritten in the same
+  commit.
+- **Leave them alone** — train with `--name train1` instead. `runs/*/train[0-9]*/` is
+  gitignored, so nothing tracked changes except the JSON records. Cheaper, but the
+  README would then quote numbers for weights that are not in the repository, which is
+  the weaker form of evidence this repository otherwise avoids.
+
+**7. Re-record the numbers.**
+
+```powershell
+python evaluate.py classify --split val  --save runs\eval_classify_val.json
+python evaluate.py classify --split test --save runs\eval_classify_test.json
+python evaluate.py segment  --split val  --cross-check --save runs\eval_segment_val.json
+```
+
+Keep the `eval_*` name: `.gitignore` ignores `runs/**/*.json` and re-admits exactly that
+pattern, so any other filename stays local and invisible to a reader. These three files
+already exist and currently hold the contaminated numbers — overwriting them is the
+point, and git history keeps the old values. `--cross-check` runs ultralytics' own
+`val()` alongside the metrics computed here, which is how the detection row got its
+second opinion (`runs/eval_detect_retrained_cross.json`).
+
+**8. Update what this README asserts.**
+
+- the two rows in [Where the numbers live](#where-the-numbers-live), and the paragraph
+  above them, which currently says these tasks were not re-trained;
+- the checkpoint sentence in [Credits and licensing](#credits-and-licensing), if step 6
+  archived an original;
+- the fork-statistics sentence in [What this fork adds](#what-this-fork-adds), since new
+  weights and these edits move both the file counts and the line counts.
+
+```powershell
+python tools\check_repo_consistency.py --strict
+```
+
+re-derives every one of those figures from git and prints the exact line to paste when it
+disagrees; CI runs the same command on every push. `git status --short` is the other
+check — only the files named above should appear, because `weights/`, all three
+datasets, `segmentation/data.yaml`, `*.onnx`, `*.cache` and `*.bak` are ignored by
+design.
+
+**9. Undo.** Nothing above is destructive by accident: step 4's `--undo` moves the 50
+files back into `train/` and deletes the manifest, `git restore runs\` restores the
+tracked weights and records, and the `best.pt.bak` that `train.py` writes before its
+first overwrite is the local convenience copy — it is gitignored, which is exactly why
+step 6 archives deliberately instead of relying on it.
+
 ### GPU training
 
 `requirements.txt` installs CPU-only torch. For an NVIDIA GPU:
@@ -376,7 +517,9 @@ in [What this fork adds](#what-this-fork-adds): upstream validated on `test/` wh
 training (which is why 0.9848 there beats 0.9200 on `val/` — the test set is the one
 that was selected on), and `val/` was carved out of `train/` afterwards (so those 50
 images were trained on). Neither figure is a clean generalisation estimate; getting
-one needs the re-train, not another `evaluate.py` run.
+one needs the re-train, not another `evaluate.py` run —
+[Re-training classification and segmentation](#5-re-training-classification-and-segmentation)
+is the step-by-step version of that job.
 
 
 ## Data augmentation
@@ -497,7 +640,7 @@ Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `5d13edf` — the tip of upstream's `master`,
 the commit this fork grew from — and ignoring `runs/`, this fork adds 28 files and
-modifies 7 (35 files, +8075 / −333 lines). CI re-derives every number in that sentence
+modifies 7 (35 files, +8224 / −333 lines). CI re-derives every number in that sentence
 with [`tools/check_repo_consistency.py`](tools/check_repo_consistency.py), so it cannot
 rot quietly.
 
@@ -554,8 +697,14 @@ modified all five: `app.py`, `classification/classify.py`, `detection/detect.py`
 `segmentation/masks_to_polygons.py`, `segmentation/segment.py` — plus `README.md` and
 `requirements.txt`. The four screenshots further up are upstream's images: this fork
 carries the same files unchanged, so they render from this repository rather than being
-hot-linked. The three `runs/*/train/weights/best.pt` checkpoints were trained by
-that author on Google Colab. Upstream carries **no `LICENSE` file**, and no licence
+hot-linked. Two of the three `runs/*/train/weights/best.pt` checkpoints — classification
+and segmentation — were trained by that author on Google Colab, and are the versions
+this fork ships unchanged. `runs/detect/train/weights/best.pt` is the exception: it is
+this fork's continuation of that Colab run, so it is derived from the author's
+checkpoint rather than from scratch, and the author's original is kept byte-for-byte at
+`runs/detect/_archive/best_original_colab_20260929.pt`. Upstream's work is therefore
+still in this repository in full, and removing or relicensing any of it is not
+something this fork can decide. Upstream carries **no `LICENSE` file**, and no licence
 means no permission granted: by default all rights stay with its author. Those files
 are therefore *not* covered by anything this fork grants, and anyone wanting to reuse
 them — commercially in particular — has to ask the upstream author. The fork link in
