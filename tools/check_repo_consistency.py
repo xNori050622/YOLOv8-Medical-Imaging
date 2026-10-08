@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -83,6 +84,21 @@ def _git(*args: str) -> str | None:
     except OSError:
         return None
     return result.stdout if result.returncode == 0 else None
+
+
+def _minus_sign() -> str:
+    """建议行里那个减号用 U+2212 还是 ASCII 连字符，取决于控制台编码吃不吃得下。
+
+    Windows 控制台常见 GBK/cp437，U+2212 编不出去 —— 那样会把一条本该可以直接复制
+    去改 README 的建议，变成一串 UnicodeEncodeError traceback。正则本来就两种都收，
+    所以这里退回 ASCII 连字符即可（README 里若已是 U+2212 也不会因此判错）。
+    """
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        "\u2212".encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        return "-"
+    return "\u2212"
 
 
 def _base_available(base: str) -> bool:
@@ -179,7 +195,8 @@ def check_readme_stats(base: str, strict: bool) -> tuple[list[str], str]:
         problems.append(
             "请把 README「What this fork adds」里的数字改成："
             f"adds {actual['added']} files and modifies {actual['modified']} "
-            f"({actual['files']} files, +{actual['insertions']} / \u2212{actual['deletions']} lines)."
+            f"({actual['files']} files, +{actual['insertions']} / "
+            f"{_minus_sign()}{actual['deletions']} lines)."
         )
     return problems, f"对比基线 {label}"
 
