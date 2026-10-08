@@ -391,10 +391,10 @@ second opinion (`runs/eval_detect_retrained_cross.json`).
 python tools\check_repo_consistency.py --strict
 ```
 
-re-derives every one of those figures from git and prints the exact line to paste when it
-disagrees; CI runs the same command on every push. `git status --short` is the other
-check — only the files named above should appear, because `weights/`, all three
-datasets, `segmentation/data.yaml`, `*.onnx`, `*.cache` and `*.bak` are ignored by
+That command re-derives every one of those figures from git and prints the exact line to
+paste when it disagrees; CI runs the same command on every push. `git status --short` is
+the other check — only the files named above should appear, because `weights/`, all
+three datasets, `segmentation/data.yaml`, `*.onnx`, `*.cache` and `*.bak` are ignored by
 design.
 
 **9. Undo.** Nothing above is destructive by accident: step 4's `--undo` moves the 50
