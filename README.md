@@ -497,7 +497,7 @@ Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `5d13edf` — the tip of upstream's `master`,
 the commit this fork grew from — and ignoring `runs/`, this fork adds 28 files and
-modifies 7 (35 files, +8042 / −333 lines). CI re-derives every number in that sentence
+modifies 7 (35 files, +8045 / −333 lines). CI re-derives every number in that sentence
 with [`tools/check_repo_consistency.py`](tools/check_repo_consistency.py), so it cannot
 rot quietly.
 

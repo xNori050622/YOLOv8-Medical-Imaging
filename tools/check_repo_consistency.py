@@ -84,7 +84,10 @@ def _git(*args: str) -> str | None:
 
 
 def _base_available(base: str) -> bool:
-    return _git("rev-parse", "--verify", "--quiet", base) is not None
+    # 用 cat-file -e 而不是 rev-parse --verify：后者对完整的 40 位 SHA 只校验格式，
+    # 对象其实不在本地（浅克隆/部分克隆）也会「成功」，于是后面会报出误导性的
+    # 「不是 HEAD 的祖先」。^{commit} 强制做一次真正的对象查找。
+    return _git("cat-file", "-e", base + "^{commit}") is not None
 
 
 def _is_ancestor_of_head(base: str) -> bool:
