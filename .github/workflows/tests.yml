@@ -1,0 +1,55 @@
+name: regression tests
+
+# 这 104 个用例是纯逻辑测试：不需要 GPU、数据集或权重。
+# 被测模块只在函数体内 import torch / ultralytics（config.py、training.py、evaluate.py），
+# 模块级只用到 numpy / cv2 / PyYAML —— 已在本地把 torch/ultralytics/PIL/matplotlib/streamlit
+# 全部屏蔽后跑过一遍，104/104 通过。所以这里只装那三个包，版本与 requirements.txt 一致。
+#
+# 用 windows-latest 而不是 ubuntu：requirements.txt 声明的平台是 Windows，启动器也是
+# .bat/.ps1，CI 跑在与开发者一致的环境上才说明得了问题。
+#
+# 本地等价命令（见 README「Regression tests」）：每个文件都有自己的 main()
+#   python tests/test_metrics.py
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: 104 regression tests (Windows, Python 3.11)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the three dependencies the tests actually touch
+        run: |
+          python -m pip install --upgrade pip
+          pip install "numpy==2.4.6" "opencv-python==5.0.0.93" "PyYAML==6.0.3"
+          pip list
+
+      - name: Run every regression test file
+        shell: pwsh
+        run: |
+          $files = @(
+            'tests/test_metrics.py',
+            'tests/test_augment.py',
+            'tests/test_make_augmented_dataset.py',
+            'tests/test_make_classify_val.py',
+            'tests/test_split_alignment.py',
+            'tests/test_training.py'
+          )
+          foreach ($file in $files) {
+            Write-Host "=== $file ==="
+            python $file
+            if ($LASTEXITCODE -ne 0) { throw "$file failed (exit $LASTEXITCODE)" }
+          }
+          Write-Host "all six files passed"
