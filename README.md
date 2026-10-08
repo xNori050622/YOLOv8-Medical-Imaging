@@ -278,6 +278,13 @@ installed — in this fork `D:\infynova\venv_gpu\Scripts\python.exe` (torch 2.13
 where `--device auto` finds the GPU; the CPU environment from `requirements.txt` runs
 the same commands, slowly).
 
+`tools\retrain_classify_segment.bat` wraps the whole list in a menu — double-click it,
+or run `tools\retrain_classify_segment.bat all` for steps 1 - 3 - 4 - 6 - 7 - 8 in that
+order, each one still asking for confirmation. It hardcodes the GPU interpreter above,
+refuses to start without it, and adds `--device 0 --no-amp --workers 2` when training:
+the same three choices `tools\train_detect_gpu.bat` already makes on this machine. It
+does **not** archive anything by itself, because step 5 is a decision, not a step.
+
 **1. Preflight.**
 
 ```powershell
@@ -323,29 +330,11 @@ manifest; re-running without `--undo` refuses while `val/` exists unless `--forc
 given. From here on `val/` is the selection-time figure, and `test/` — 66 images, never
 trained on and never selected on — is the one to quote.
 
-**5. Train.**
-
-```powershell
-python train.py classify      # 100 epochs, imgsz 224
-python train.py segment       # 100 epochs, imgsz 640
-```
-
-Defaults mirror `runs/*/train/args.yaml`: 100 epochs, batch 16, seed 0,
-`deterministic=True`. Output lands in `runs/<task>/train/` — the directory the app and
-`evaluate.py` read — and the existing `best.pt` is copied to `best.pt.bak` first, so a
-re-train never destroys the shipped weights silently. An interrupted run continues with
-`--resume`, which then takes epochs, data and batch from the checkpoint itself. For a
-sense of scale, detection runs at about 21 s/epoch on the machine this fork was
-developed on (1723 images at 640 px, per `tools\train_detect_gpu.bat`, ~35 minutes for
-100 epochs); these two are smaller — 201 training images at 224 px for classification,
-roughly 600 at 640 px for segmentation — so both should come in under that.
-`tools\train_status.ps1` is wired to `runs\detect\train` and will not track them; watch
-the console or `runs\<task>\train\results.csv`.
-
-**6. Decide what happens to the upstream checkpoints.**
-`runs/classify/train/weights/best.pt` and `runs/segment/train/weights/best.pt` are still
-upstream's files, tracked and unmodified, and training into the default name overwrites
-them. Two honest options, and the choice is visible to anyone who clones this:
+**5. Decide what happens to the upstream checkpoints.**
+`runs/classify/train/weights/best.pt` and `runs/segment/train/weights/best.pt` are
+upstream's files, tracked and unmodified, and training into the default name would
+overwrite them — so this decision comes **before** the training step, not after. Two
+honest options, and the choice is visible to anyone who clones this:
 
 ```powershell
 copy runs\classify\train\weights\best.pt runs\classify\_archive\best_original_colab_<date>.pt
@@ -362,6 +351,26 @@ copy runs\segment\train\weights\best.pt  runs\segment\_archive\best_original_col
   gitignored, so nothing tracked changes except the JSON records. Cheaper, but the
   README would then quote numbers for weights that are not in the repository, which is
   the weaker form of evidence this repository otherwise avoids.
+
+**6. Train.**
+
+```powershell
+python train.py classify      # 100 epochs, imgsz 224
+python train.py segment       # 100 epochs, imgsz 640
+```
+
+Defaults mirror `runs/*/train/args.yaml`: 100 epochs, batch 16, seed 0,
+`deterministic=True`. Output lands in `runs/<task>/train/` — the directory the app and
+`evaluate.py` read — and the existing `best.pt` is copied to `best.pt.bak` first. That
+backup is gitignored and local, so treat step 5 as the real safety net, not this one. An
+interrupted run continues with `--resume`, which then takes epochs, data and batch from
+the checkpoint itself. For a sense of scale, detection runs at about 21 s/epoch on the
+machine this fork was developed on (1723 images at 640 px, per
+`tools\train_detect_gpu.bat`, ~35 minutes for 100 epochs); these two are smaller — 201
+training images at 224 px for classification, roughly 600 at 640 px for segmentation —
+so both should come in under that. `tools\train_status.ps1` is wired to
+`runs\detect\train` and will not track them; watch the console or
+`runs\<task>\train\results.csv`.
 
 **7. Re-record the numbers.**
 
@@ -382,7 +391,7 @@ second opinion (`runs/eval_detect_retrained_cross.json`).
 
 - the two rows in [Where the numbers live](#where-the-numbers-live), and the paragraph
   above them, which currently says these tasks were not re-trained;
-- the checkpoint sentence in [Credits and licensing](#credits-and-licensing), if step 6
+- the checkpoint sentence in [Credits and licensing](#credits-and-licensing), if step 5
   archived an original;
 - the fork-statistics sentence in [What this fork adds](#what-this-fork-adds), since new
   weights and these edits move both the file counts and the line counts.
@@ -639,8 +648,8 @@ already been wrong here once while looking green locally.
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `5d13edf` — the tip of upstream's `master`,
-the commit this fork grew from — and ignoring `runs/`, this fork adds 28 files and
-modifies 7 (35 files, +8224 / −333 lines). CI re-derives every number in that sentence
+the commit this fork grew from — and ignoring `runs/`, this fork adds 29 files and
+modifies 7 (36 files, +8569 / −333 lines). CI re-derives every number in that sentence
 with [`tools/check_repo_consistency.py`](tools/check_repo_consistency.py), so it cannot
 rot quietly.
 
@@ -652,6 +661,7 @@ rot quietly.
 | Data preparation | `tools/make_classify_val.py`, and the rewritten split in `segmentation/masks_to_polygons.py` |
 | Interactive app | `export.py` plus refactored `predict()` in the three task modules and centralised paths in `config.py` |
 | Windows launchers | `run_web.bat`, `run_web.ps1`, `run_web_gpu.bat`, `run_web_gpu.ps1` |
+| Re-train launcher | `tools/retrain_classify_segment.bat` — the classification + segmentation checklist as a menu (check / prepare / split / unval / archive / smoke / classify / segment / resume / eval / guard / all) |
 | Training helpers | `tools/train_detect_gpu.bat` (menu: check / eval / smoke / train / resume / web / status), `tools/train_status.ps1` + `tools/train_status.bat` |
 | Regression tests | `tests/` — 104 cases |
 | Doc consistency | `tools/check_repo_consistency.py` — asserts the numbers in this README (fork statistics, per-file case counts, dependency pins) against git and the workflow |
