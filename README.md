@@ -43,21 +43,21 @@ I used Streamlit to create a user-friendly interface for easy interaction with t
 
 ### About page
 
-![About](https://github.com/sevdaimany/YOLOv8-Medical-Imaging/blob/master/intro_screenshot.png)
+![About](intro_screenshot.png)
 
 
 ### Object Detection
 
-![Object Detection Screenshot](https://github.com/sevdaimany/YOLOv8-Medical-Imaging/blob/master/detection/detection_screenshot.png)
+![Object Detection Screenshot](detection/detection_screenshot.png)
 
 ### Classification
 
-![Classification Screenshot](https://github.com/sevdaimany/YOLOv8-Medical-Imaging/blob/master/classification/classification_screenshot.png)
+![Classification Screenshot](classification/classification_screenshot.png)
 
 
 ### Segmentation
 
-![Segmentation Screenshot](https://github.com/sevdaimany/YOLOv8-Medical-Imaging/blob/master/segmentation/segmentation_screenshot.png)
+![Segmentation Screenshot](segmentation/segmentation_screenshot.png)
 
 ## Installation and Usage
 
@@ -66,7 +66,7 @@ I used Streamlit to create a user-friendly interface for easy interaction with t
 1. Clone this repository to your local machine:
 
    ```bash
-   git clone https://github.com/sevdaimany/YOLOv8-Medical-Imaging.git
+   git clone https://github.com/xNori050622/YOLOv8-Medical-Imaging.git
    ```
 2. Navigate to the project directory:
 
@@ -480,13 +480,26 @@ That job is what keeps the sentence above honest: the suite has to pass on a mac
 with neither the datasets nor torch, and running it on a clean checkout is the only
 way to notice when one of the tests quietly stops meeting that bar.
 
+The same job also runs two guards that only mean something on a clean machine.
+`python tools/check_repo_consistency.py --strict` re-derives this README's numbers
+from git and from the test files — the fork statistics below, the per-file case counts
+above, and the dependency pins in the workflow itself — so a number that drifts fails
+the build instead of quietly misleading a reader. And `python train.py --help` plus
+`python evaluate.py --help` prove the two CLI entry points still import with neither
+torch nor a dataset present, which is the one failure mode the six test files cannot
+see (none of them imports an entry point). Both guards exist because both things have
+already been wrong here once while looking green locally.
+
 
 ## What this fork adds
 
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
-`segmentation/segment.py`. Measured against `origin/master` and ignoring `runs/`, this fork
-adds 27 files and modifies 7 (34 files, +7721 / −328 lines).
+`segmentation/segment.py`. Measured against `5d13edf` — the tip of upstream's `master`,
+the commit this fork grew from — and ignoring `runs/`, this fork adds 28 files and
+modifies 7 (35 files, +8042 / −333 lines). CI re-derives every number in that sentence
+with [`tools/check_repo_consistency.py`](tools/check_repo_consistency.py), so it cannot
+rot quietly.
 
 | Area | Files |
 | --- | --- |
@@ -498,6 +511,7 @@ adds 27 files and modifies 7 (34 files, +7721 / −328 lines).
 | Windows launchers | `run_web.bat`, `run_web.ps1`, `run_web_gpu.bat`, `run_web_gpu.ps1` |
 | Training helpers | `tools/train_detect_gpu.bat` (menu: check / eval / smoke / train / resume / web / status), `tools/train_status.ps1` + `tools/train_status.bat` |
 | Regression tests | `tests/` — 104 cases |
+| Doc consistency | `tools/check_repo_consistency.py` — asserts the numbers in this README (fork statistics, per-file case counts, dependency pins) against git and the workflow |
 
 Three defects in the original pipeline were fixed along the way, all three of which
 are silent — none of them raises an error or produces a wrong-looking output, they
@@ -532,8 +546,9 @@ same way.
 and keeps its history. Upstream's five Python files all survive here, and this fork
 modified all five: `app.py`, `classification/classify.py`, `detection/detect.py`,
 `segmentation/masks_to_polygons.py`, `segmentation/segment.py` — plus `README.md` and
-`requirements.txt`. The screenshots further up are still hot-linked from the upstream
-repository, and the three `runs/*/train/weights/best.pt` checkpoints were trained by
+`requirements.txt`. The four screenshots further up are upstream's images: this fork
+carries the same files unchanged, so they render from this repository rather than being
+hot-linked. The three `runs/*/train/weights/best.pt` checkpoints were trained by
 that author on Google Colab. Upstream carries **no `LICENSE` file**, and no licence
 means no permission granted: by default all rights stay with its author. Those files
 are therefore *not* covered by anything this fork grants, and anyone wanting to reuse
