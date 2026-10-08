@@ -74,18 +74,42 @@ def test_segment_missing_explicit_yaml_raises():
 
 
 def test_segment_failed_resolve_does_not_touch_default_yaml():
-    """回退分支不该被触发，所以默认 data.yaml 必须一个字节都没变。"""
-    default_yaml = config.SEGMENT_DATA_YAML
-    if not default_yaml.is_file():
-        return  # 还没准备数据时跳过（本机没跑过 --prepare 的情况）
+    """回退分支不该被触发，所以默认 data.yaml 必须一个字节都没变。
 
-    before = default_yaml.read_bytes()
+    与上一条用例同样的毛病：原先靠 `if not default_yaml.is_file(): return`
+    在没有数据集的机器上早退，于是 CI 上这条用例打印 PASS 却一句断言都没跑
+    （README 承诺的「无需数据集」因此名不副实）。这里自造一个默认 data.yaml，
+    填成与本函数无关的哨兵内容，再断言它字节级未变。
+    """
     with tempfile.TemporaryDirectory() as temporary:
+        sentinel = Path(temporary) / "data.yaml"
+        sentinel_bytes = b"path: sentinel\nnc: 3\n"
+        sentinel.write_bytes(sentinel_bytes)
+        # 诱饵：默认数据目录指向一棵真实存在的最小数据树。万一有人把
+        #「显式 --data 不存在就静默回退」改回来，回退会真的去重写上面这份
+        # 哨兵文件，于是本用例在任何机器（包括 CI）都会红。
+        decoy_root = _build_segment_root(Path(temporary) / "decoy_data")
+
+        original_split_dir = config.SEGMENT_SPLIT_DIR
+        original_data_yaml = config.SEGMENT_DATA_YAML
+        original_profile_data = training.TASK_PROFILES["segment"]["data"]
+        config.SEGMENT_SPLIT_DIR = decoy_root
+        config.SEGMENT_DATA_YAML = sentinel
+        training.TASK_PROFILES["segment"]["data"] = sentinel
         try:
-            training.resolve_data("segment", str(Path(temporary) / "nope" / "data.yaml"))
-        except FileNotFoundError:
-            pass
-    assert default_yaml.read_bytes() == before, "默认 data.yaml 被改写了"
+            missing = Path(temporary) / "nope" / "data.yaml"
+            try:
+                training.resolve_data("segment", str(missing))
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError(f"{missing} 不存在，却没有报错")
+        finally:
+            config.SEGMENT_SPLIT_DIR = original_split_dir
+            config.SEGMENT_DATA_YAML = original_data_yaml
+            training.TASK_PROFILES["segment"]["data"] = original_profile_data
+
+        assert sentinel.read_bytes() == sentinel_bytes, "默认 data.yaml 被改写了"
 
 
 def test_segment_explicit_yaml_is_used():
