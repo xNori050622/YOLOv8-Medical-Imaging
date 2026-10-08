@@ -16,6 +16,9 @@
 #   5) 不再依赖 split-folders: 数据集划分改为「按病例名归组后划分」,
 #      见 segmentation/masks_to_polygons.split_train_test_val 的 docstring,
 #      因此 split-folders==0.6.1 已从本文件移除。
+#   6) GPU 网页演示用另一个环境 D:\infynova\venv_gpu
+#      (torch==2.13.0+cu126 + streamlit==1.64.0), 启动: run_web_gpu.bat
+#      实测 RTX 4060 Laptop: detect 0.014 s/张 (本环境 CPU 版 0.070 s/张)。
 # ============================================================
 
 # --- 直接依赖 ---
