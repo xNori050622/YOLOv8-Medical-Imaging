@@ -497,7 +497,7 @@ Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `5d13edf` — the tip of upstream's `master`,
 the commit this fork grew from — and ignoring `runs/`, this fork adds 28 files and
-modifies 7 (35 files, +8066 / −333 lines). CI re-derives every number in that sentence
+modifies 7 (35 files, +8075 / −333 lines). CI re-derives every number in that sentence
 with [`tools/check_repo_consistency.py`](tools/check_repo_consistency.py), so it cannot
 rot quietly.
 
@@ -541,6 +541,12 @@ just make the numbers mean something other than what they appear to mean.
 Different parts of this repository carry different rights, and they do not point the
 same way.
 
+Ships no `LICENSE` file, deliberately. The intent here is personal study and honest
+evaluation, not redistribution: this fork grants no reuse rights on its own code (see
+below), and the upstream files were never this fork's to license. A `LICENSE` file is
+the one thing a repository like this cannot honestly issue. If upstream ever declares
+one, its terms govern upstream's files.
+
 **The upstream work.** This repository is a fork of
 [sevdaimany/YOLOv8-Medical-Imaging](https://github.com/sevdaimany/YOLOv8-Medical-Imaging)
 and keeps its history. Upstream's five Python files all survive here, and this fork
@@ -559,9 +565,12 @@ the header is the attribution; nothing here claims authorship of them.
 [What this fork adds](#what-this-fork-adds) — `train.py`, `training.py`, `dataset.py`,
 `config.py`, `metrics.py`, `evaluate.py`, `augment.py`, `export.py`, `tools/`,
 `tests/`, the Windows launchers and the `runs/eval_*.json` records — was written here.
-No licence is granted on that either: treat it as source-available for study and
-review, and ask before reusing it. A public fork is not a licence; it is only a public
-fork.
+No licence is granted on that either: treat it as source-available for personal study,
+teaching and review — that is what this repository is for — and ask first before any
+other use, commercial use in particular. This is a statement of intent, not a term
+imposed on anyone: it cannot restrict what you may do with the upstream files above,
+and it does not change the AGPL terms below. A public fork is not a licence; it is only
+a public fork.
 
 **Ultralytics YOLOv8 is AGPL-3.0** — the one part with an explicit licence, and the one
 part that constrains what you may do with the *output*. `pip show ultralytics` reports
