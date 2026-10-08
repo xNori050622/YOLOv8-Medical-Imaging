@@ -4,6 +4,7 @@
 
     python train.py check                    # 自检：权重与数据集是否就位
     python train.py detect                   # 训练检测模型（100 epoch）
+    python train.py detect --resume          # 断点续训：从 last.pt 接着跑
     python train.py classify --epochs 1      # 冒烟：只跑 1 个 epoch
     python train.py segment --prepare        # 先准备分割数据集（掩码转多边形 + 划分）
     python train.py segment                  # 再训练
@@ -59,6 +60,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="DataLoader 进程数，Windows 上卡住可设 0")
     parser.add_argument("--no-amp", dest="amp", action="store_false",
                         help="关闭混合精度；也避免 ultralytics 为 AMP 自检下载 yolo26n.pt")
+    parser.add_argument("--resume", action="store_true",
+                        help="从 runs/<task>/<name>/weights/last.pt 继续未跑完的训练；"
+                             "epochs/data/batch/amp/seed 等一律沿用 checkpoint 里的记录")
     return parser
 
 
@@ -88,6 +92,7 @@ def train_one(task: str, args) -> None:
         device=args.device,
         pretrained=args.pretrained,
         name=args.name,
+        resume=args.resume,
         **_extras(args),
     )
     print(f"[train.py] {task} 完成，best.pt: {weights}\n")
