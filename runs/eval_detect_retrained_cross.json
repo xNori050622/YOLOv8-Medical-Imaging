@@ -1,0 +1,55 @@
+{
+  "per_class": {
+    "0": {
+      "name": "Platelets",
+      "tp": 170,
+      "fp": 43,
+      "fn": 3,
+      "num_gt": 173,
+      "precision": 0.7981220657276995,
+      "recall": 0.9826589595375722,
+      "f1": 0.8808290155440414,
+      "ap": 0.9387573088873128
+    },
+    "1": {
+      "name": "RBC",
+      "tp": 1793,
+      "fp": 831,
+      "fn": 154,
+      "num_gt": 1947,
+      "precision": 0.6833079268292683,
+      "recall": 0.9209039548022598,
+      "f1": 0.7845110479107417,
+      "ap": 0.848756167819821
+    },
+    "2": {
+      "name": "WBC",
+      "tp": 181,
+      "fp": 4,
+      "fn": 0,
+      "num_gt": 181,
+      "precision": 0.9783783783783784,
+      "recall": 1.0,
+      "f1": 0.9890710382513661,
+      "ap": 0.9994512334154476
+    }
+  },
+  "iou_threshold": 0.5,
+  "macro": {
+    "precision": 0.8199361236451154,
+    "recall": 0.967854304779944,
+    "f1": 0.8848037005687163
+  },
+  "mAP": 0.9289882367075272,
+  "task": "detect",
+  "num_images": 175,
+  "skipped_images": 0,
+  "weights": "D:\\YOLOv8-Medical-Imaging\\runs\\detect\\train\\weights\\best.pt",
+  "split": "valid",
+  "conf": 0.25,
+  "imgsz": 640,
+  "ultralytics_val": {
+    "box_mAP50": 0.9582429405561758,
+    "box_mAP50_95": 0.7032903291050273
+  }
+}
