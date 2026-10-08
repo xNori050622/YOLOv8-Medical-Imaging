@@ -479,7 +479,7 @@ pytest tests/                   # if you happen to have pytest installed
 Upstream is five Python files: `app.py`, `classification/classify.py`,
 `detection/detect.py`, `segmentation/masks_to_polygons.py` and
 `segmentation/segment.py`. Measured against `origin/master` and ignoring `runs/`, this fork
-adds 26 files and modifies 7 (33 files, +7552 / −328 lines).
+adds 27 files and modifies 7 (34 files, +7661 / −328 lines).
 
 | Area | Files |
 | --- | --- |
@@ -513,6 +513,60 @@ just make the numbers mean something other than what they appear to mean.
    failing. An augmentation experiment would then train on the unaugmented data while
    the run's own records claimed otherwise: every row of the ablation table wrong,
    and nothing raising an error. It now raises `FileNotFoundError`.
+
+
+## Credits and licensing
+
+Different parts of this repository carry different rights, and they do not point the
+same way.
+
+**The upstream work.** This repository is a fork of
+[sevdaimany/YOLOv8-Medical-Imaging](https://github.com/sevdaimany/YOLOv8-Medical-Imaging)
+and keeps its history. Upstream's five Python files all survive here, and this fork
+modified all five: `app.py`, `classification/classify.py`, `detection/detect.py`,
+`segmentation/masks_to_polygons.py`, `segmentation/segment.py` — plus `README.md` and
+`requirements.txt`. The screenshots further up are still hot-linked from the upstream
+repository, and the three `runs/*/train/weights/best.pt` checkpoints were trained by
+that author on Google Colab. Upstream carries **no `LICENSE` file**, and no licence
+means no permission granted: by default all rights stay with its author. Those files
+are therefore *not* covered by anything this fork grants, and anyone wanting to reuse
+them — commercially in particular — has to ask the upstream author. The fork link in
+the header is the attribution; nothing here claims authorship of them.
+
+**What this fork adds.** Everything listed under
+[What this fork adds](#what-this-fork-adds) — `train.py`, `training.py`, `dataset.py`,
+`config.py`, `metrics.py`, `evaluate.py`, `augment.py`, `export.py`, `tools/`,
+`tests/`, the Windows launchers and the `runs/eval_*.json` records — was written here.
+No licence is granted on that either: treat it as source-available for study and
+review, and ask before reusing it. A public fork is not a licence; it is only a public
+fork.
+
+**Ultralytics YOLOv8 is AGPL-3.0** — the one part with an explicit licence, and the one
+part that constrains what you may do with the *output*. `pip show ultralytics` reports
+`License: AGPL-3.0`; this project depends on `ultralytics==8.4.135` for every training
+and inference path, and the fine-tuned checkpoints are derived from it, so they inherit
+it. AGPL-3.0 is strong copyleft — a *network service* built on it must offer its users
+the complete corresponding source under the same licence. Concretely:
+
+- Reading this repository, running the app on your own machine, or quoting the numbers
+  in this README is not a problem.
+- Deploying the Streamlit app as a service, or shipping a model trained on it inside a
+  closed product, is — Ultralytics sells a commercial licence for exactly that case.
+- The AGPL governs Ultralytics' code. It says nothing about the datasets below, and
+  nothing about the upstream files above.
+
+The rest of the dependency list raises no such constraint: `torch` is
+Apache-2.0/BSD/MIT, and `numpy`, `opencv-python`, `PyYAML` and `Pillow` are
+permissively licensed.
+
+**Datasets are not bundled and keep their own terms.** Every image under
+`detection/data/`, `classification/Covid19-dataset/` and `segmentation/` comes from
+[Roboflow Universe](https://universe.roboflow.com/tfg-2nmge/yolo-yejbs), the
+[COVID-19 Image Dataset](https://www.kaggle.com/datasets/pranavraikokte/covid19-image-dataset)
+and [BUSI](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset)
+respectively, each under whatever licence its own page states — check that page before
+redistributing any image, and cite the dataset if you publish results. They are excluded
+by `.gitignore` and exist only on the machine that produced the recorded numbers.
 
 
 
