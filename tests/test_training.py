@@ -104,9 +104,38 @@ def test_segment_explicit_yaml_is_used():
 
 
 def test_segment_without_data_falls_back_to_default():
-    """不传 --data 时仍走 config 的默认位置（原有行为不能被这次修复改坏）。"""
-    assert training.resolve_data("segment", None) == str(config.SEGMENT_DATA_YAML)
-    assert training.resolve_data("segment", "") == str(config.SEGMENT_DATA_YAML)
+    """不传 --data 时仍走 config 的默认位置（原有行为不能被这次修复改坏）。
+
+    这条用例原先直接调 resolve_data("segment", None)，于是隐含依赖「本机已经
+    跑过 --prepare」：默认分支会去 config.SEGMENT_SPLIT_DIR 生成 data.yaml，
+    而 config.SEGMENT_SPLIT_DIR 只在真实数据就位时存在。在干净克隆 / CI 上
+    它必然抛 FileNotFoundError，还会顺手改写仓库里的 segmentation/data.yaml ——
+    一个测试套件不该有这两种行为，所以这里把「默认位置」临时指到 tempfile
+    造的假数据集上：分支被完整走到，结果与机器状态无关，也不再碰仓库文件。
+    """
+    with tempfile.TemporaryDirectory() as temporary:
+        root = _build_segment_root(Path(temporary) / "data")
+        default_yaml = Path(temporary) / "data.yaml"
+        assert not default_yaml.exists()
+
+        original_split_dir = config.SEGMENT_SPLIT_DIR
+        original_data_yaml = config.SEGMENT_DATA_YAML
+        original_profile_data = training.TASK_PROFILES["segment"]["data"]
+        config.SEGMENT_SPLIT_DIR = root
+        config.SEGMENT_DATA_YAML = default_yaml
+        training.TASK_PROFILES["segment"]["data"] = default_yaml
+        try:
+            assert training.resolve_data("segment", None) == str(config.SEGMENT_DATA_YAML)
+            assert training.resolve_data("segment", "") == str(config.SEGMENT_DATA_YAML)
+        finally:
+            config.SEGMENT_SPLIT_DIR = original_split_dir
+            config.SEGMENT_DATA_YAML = original_data_yaml
+            training.TASK_PROFILES["segment"]["data"] = original_profile_data
+
+        # 回退分支确实把 data.yaml 生成在了默认位置，并指向默认的数据目录
+        payload = yaml.safe_load(default_yaml.read_text(encoding="utf-8"))
+        assert Path(payload["path"]) == root
+        assert payload["train"] == "train/images"
 
 
 def test_detect_missing_explicit_yaml_raises():
